@@ -39,7 +39,3 @@ def get_file_content(working_directory, file_path):
   except Exception as e:
     print(f"Error reading file: {e}")
     return f'Error: {e}'
-
-      
-    
-get_file_content("calculator", "lorem")

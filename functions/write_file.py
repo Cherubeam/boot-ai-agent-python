@@ -20,6 +20,3 @@ def write_file(working_directory, file_path, content):
             return f'Successfully wrote to "{file_path}" ({len(content)} characters written)'
     except Exception as e:
         return f'Error writing to file "{file_path}": {e}'
-
-
-# write_file("calculator", "pkg/new_file.txt", "This is a new file. No, actually, it is just a test.")

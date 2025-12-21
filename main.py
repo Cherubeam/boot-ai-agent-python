@@ -25,7 +25,17 @@ def main():
     if args.verbose:
         print(f"User prompt: {args.user_prompt}\n")
 
-    generate_content(client, messages, args.verbose)
+    max_iterations = 20
+    current_iteration = 0
+    while current_iteration < max_iterations:
+        try:
+            finished = generate_content(client, messages, args.verbose)
+            if finished:
+                break
+        except Exception as e:
+            print(f"Error in iteration {current_iteration}: {e}")
+            break
+        current_iteration += 1
 
 
 def generate_content(client, messages, verbose):
@@ -36,6 +46,10 @@ def generate_content(client, messages, verbose):
             tools=[available_functions], system_instruction=system_prompt
         ),
     )
+
+    for candidate in response.candidates:
+        messages.append(candidate.content)
+
     if not response.usage_metadata:
         raise RuntimeError("Gemini API response appears to be malformed")
 
@@ -64,6 +78,21 @@ def generate_content(client, messages, verbose):
             print(f"-> {function_call_result.parts[0].function_response.response}")
 
         function_call_result_list.append(function_call_result.parts[0])
+
+    print("Function call result list:")
+    print(function_call_result_list)
+    messages.append(types.Content(role="user", parts=function_call_result_list))
+
+    print("Messages after function calls:")
+    print(messages)
+
+    if (
+        function_call_result_list[-1].function_call == None
+        and function_call_result_list[-1].text != None
+    ):
+        print("Final response:")
+        print(function_call_result_list[-1].function_response.response)
+        return True
 
 
 if __name__ == "__main__":

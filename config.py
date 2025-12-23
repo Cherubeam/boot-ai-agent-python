@@ -1,3 +1,3 @@
 MAX_CHARS = 10000
 MAX_ITERATIONS = 10
-WORKING_DIR = ".calculator"
+WORKING_DIR = "./calculator"

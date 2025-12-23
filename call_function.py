@@ -1,5 +1,6 @@
 from google.genai import types
 
+from config import WORKING_DIR
 from functions.get_files_info import schema_get_files_info, get_files_info
 from functions.get_file_content import schema_get_file_content, get_file_content
 from functions.run_python_file import schema_run_python_file, run_python_file
@@ -30,7 +31,7 @@ def call_function(function_call, verbose=False):
 
     if function_call.name in functions:
         function_result = functions[function_call.name](
-            "./calculator", **function_call.args
+            WORKING_DIR, **function_call.args
         )
         return types.Content(
             role="tool",

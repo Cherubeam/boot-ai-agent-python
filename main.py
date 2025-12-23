@@ -1,10 +1,12 @@
 import argparse
 import os
+import sys
 
 from dotenv import load_dotenv
 from google import genai
 from google.genai import types
 
+from config import MAX_ITERATIONS
 from prompts import system_prompt
 from call_function import available_functions, call_function
 
@@ -25,17 +27,21 @@ def main():
     if args.verbose:
         print(f"User prompt: {args.user_prompt}\n")
 
-    max_iterations = 20
     current_iteration = 0
-    while current_iteration < max_iterations:
+    while True:
+        current_iteration += 1
+        if current_iteration > MAX_ITERATIONS:
+            print(f"Maximum iterations ({MAX_ITERATIONS}) reached. Exiting.")
+            sys.exit(1)
+
         try:
-            finished = generate_content(client, messages, args.verbose)
-            if finished:
+            final_response = generate_content(client, messages, args.verbose)
+            if final_response:
+                print("Final response:")
+                print(final_response)
                 break
         except Exception as e:
-            print(f"Error in iteration {current_iteration}: {e}")
-            break
-        current_iteration += 1
+            print(f"Error in generate_content in iteration {current_iteration}: {e}")
 
 
 def generate_content(client, messages, verbose):
@@ -47,9 +53,6 @@ def generate_content(client, messages, verbose):
         ),
     )
 
-    for candidate in response.candidates:
-        messages.append(candidate.content)
-
     if not response.usage_metadata:
         raise RuntimeError("Gemini API response appears to be malformed")
 
@@ -57,10 +60,13 @@ def generate_content(client, messages, verbose):
         print("Prompt tokens:", response.usage_metadata.prompt_token_count)
         print("Response tokens:", response.usage_metadata.candidates_token_count)
 
+    if response.candidates:
+        for candidate in response.candidates:
+            function_call_content = candidate.content
+            messages.append(function_call_content)
+
     if not response.function_calls:
-        print("Response:")
-        print(response.text)
-        return
+        return response.text
 
     function_call_result_list = []
 
@@ -79,20 +85,7 @@ def generate_content(client, messages, verbose):
 
         function_call_result_list.append(function_call_result.parts[0])
 
-    print("Function call result list:")
-    print(function_call_result_list)
     messages.append(types.Content(role="user", parts=function_call_result_list))
-
-    print("Messages after function calls:")
-    print(messages)
-
-    if (
-        function_call_result_list[-1].function_call == None
-        and function_call_result_list[-1].text != None
-    ):
-        print("Final response:")
-        print(function_call_result_list[-1].function_response.response)
-        return True
 
 
 if __name__ == "__main__":
